@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SellerSpy — Pipeline Manifest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10233A;
+    --ink-60:#5A6B80;
+    --ink-35:#93A1B2;
+    --paper:#F2F5F8;
+    --card:#FFFFFF;
+    --rule:#DCE3EB;
+    --flow:#2563A8;
+    --won:#1B7A5A;
+    --stall:#B4451F;
+    --shell:0 1px 2px rgba(16,35,58,.06), 0 8px 24px -16px rgba(16,35,58,.24);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Archivo',system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 72px}
+
+  /* ---- masthead ---- */
+  .mast{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;justify-content:space-between;
+        padding-bottom:18px;border-bottom:2px solid var(--ink)}
+  .mast h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:0}
+  .mast .sub{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-60);margin-top:4px}
+  .tally{display:flex;gap:26px}
+  .tally div{text-align:right}
+  .tally .n{font-size:22px;font-weight:600;display:block}
+  .tally .k{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-60)}
+
+  /* ---- stage rail (signature) ---- */
+  .rail{display:grid;grid-template-columns:repeat(6,1fr);margin:26px 0 8px;position:relative}
+  .rail::before{content:"";position:absolute;top:11px;left:8.33%;right:8.33%;height:2px;background:var(--rule)}
+  .stage{background:none;border:0;padding:0;cursor:pointer;text-align:center;
+         font-family:inherit;color:var(--ink-60);position:relative;z-index:1}
+  .stage .dot{width:24px;height:24px;border-radius:50%;background:var(--card);
+              border:2px solid var(--rule);margin:0 auto 8px;display:grid;place-items:center;
+              font-size:10px;font-weight:600;transition:border-color .18s,background .18s,color .18s}
+  .stage .lbl{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;line-height:1.3}
+  .stage .cnt{display:block;font-size:17px;font-weight:600;color:var(--ink);margin-top:3px}
+  .stage:hover .dot,.stage:focus-visible .dot{border-color:var(--flow)}
+  .stage[aria-pressed="true"] .dot{background:var(--flow);border-color:var(--flow);color:#fff}
+  .stage[aria-pressed="true"] .lbl{color:var(--ink);font-weight:600}
+  .stage[data-last] [aria-pressed="true"]{}
+  .stage[aria-pressed="true"][data-last] .dot{background:var(--won);border-color:var(--won)}
+
+  .filterbar{display:flex;align-items:center;gap:10px;margin:22px 0 12px;
+             font-size:12px;color:var(--ink-60)}
+  .filterbar button{font-family:inherit;font-size:12px;background:none;border:1px solid var(--rule);
+                    border-radius:99px;padding:4px 12px;cursor:pointer;color:var(--ink-60)}
+  .filterbar button:hover{border-color:var(--flow);color:var(--flow)}
+
+  /* ---- prospect rows ---- */
+  .row{background:var(--card);border:1px solid var(--rule);border-radius:10px;
+       box-shadow:var(--shell);margin-bottom:10px;overflow:hidden}
+  .rowhead{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:14px 16px;
+           cursor:pointer;background:none;border:0;width:100%;text-align:left;font-family:inherit}
+  .rowhead:focus-visible{outline:2px solid var(--flow);outline-offset:-2px}
+  .who{flex:1 1 220px;min-width:0}
+  .who .co{font-weight:600;font-size:15px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .who .pc{font-size:12px;color:var(--ink-60)}
+  .metric{flex:0 0 auto;text-align:right;min-width:74px}
+  .metric .v{font-size:14px;font-weight:600;display:block}
+  .metric .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-35)}
+  .hot .v{color:var(--stall)}
+
+  /* mini tracking rail per prospect */
+  .track{display:flex;align-items:center;gap:0;flex:0 0 auto}
+  .track i{display:block;width:9px;height:9px;border-radius:50%;background:var(--rule)}
+  .track i.done{background:var(--flow)}
+  .track i.here{background:var(--flow);box-shadow:0 0 0 3px rgba(37,99,168,.22)}
+  .track i.won{background:var(--won);box-shadow:0 0 0 3px rgba(27,122,90,.2)}
+  .track s{display:block;width:14px;height:2px;background:var(--rule);border:0}
+  .track s.done{background:var(--flow)}
+  @media (prefers-reduced-motion: no-preference){
+    .track i.here{animation:breathe 2.4s ease-in-out infinite}
+    @keyframes breathe{0%,100%{box-shadow:0 0 0 3px rgba(37,99,168,.22)}50%{box-shadow:0 0 0 6px rgba(37,99,168,.08)}}
+  }
+  .code{font-size:11px;color:var(--ink-35);letter-spacing:.04em;flex:0 0 auto}
+
+  /* ---- expanded detail ---- */
+  .detail{border-top:1px solid var(--rule);padding:16px;display:none;background:#FBFCFD}
+  .row.open .detail{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+  .fld{margin-bottom:12px}
+  .fld .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-35);display:block;margin-bottom:3px}
+  .fld .v{font-size:13.5px}
+  .opener{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--flow);
+          border-radius:0 6px 6px 0;padding:11px 13px;font-size:13px;line-height:1.55}
+  .acts{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .acts button{font-family:inherit;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:6px;
+               cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff}
+  .acts button.ghost{background:none;color:var(--ink-60);border-color:var(--rule)}
+  .acts button:disabled{opacity:.35;cursor:not-allowed}
+  .acts button:hover:not(:disabled){opacity:.86}
+  .empty{padding:44px 16px;text-align:center;color:var(--ink-60);font-size:14px;
+         border:1px dashed var(--rule);border-radius:10px}
+  footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--rule);
+         font-size:11.5px;color:var(--ink-35);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <div>
+      <h1>SellerSpy</h1>
+      <div class="sub">Pipeline manifest · Amazon seller accounts</div>
+    </div>
+    <div class="tally">
+      <div><span class="n mono" id="tOpen">—</span><span class="k">Open</span></div>
+      <div><span class="n mono" id="tWon">—</span><span class="k">Converted</span></div>
+      <div><span class="n mono" id="tRev">—</span><span class="k">Pipeline GMV/mo</span></div>
+    </div>
+  </div>
+
+  <nav class="rail" id="rail" aria-label="Filter by pipeline stage"></nav>
+
+  <div class="filterbar">
+    <span id="fState">Showing all accounts</span>
+    <button id="clearF" type="button" hidden>Clear filter</button>
+  </div>
+
+  <div id="list"></div>
+
+  <footer>
+    Qualifying logic: a seller is worth contacting when ad spend is inefficient enough that
+    automation pays for itself — ACoS above 35% on meaningful revenue. High ACoS is shown in rust.<br>
+    Mock data for demonstration. Built as a portfolio artifact.
+  </footer>
+</div>
+
+<script>
+const STAGES = ["Lead","Qualified","Contacted","Interested","Demo scheduled","Converted"];
+
+const DATA = [
+  {co:"Nova Home Essentials", pc:"Kavya Nair", cat:"Kitchen & dining", rev:18, acos:41, stage:0,
+   signal:"Running 6 ad groups with no negative keywords — spend leaking on broad match.",
+   next:"Pull their ASIN list and confirm category spend before reaching out."},
+  {co:"UrbanFit Gear", pc:"Rohit Malhotra", cat:"Sports & fitness", rev:32, acos:28, stage:0,
+   signal:"Healthy ACoS already. Growth story is inventory forecasting, not ad waste.",
+   next:"Lower priority — revisit if they expand into a second marketplace."},
+  {co:"Bloom & Bark", pc:"Aisha Qureshi", cat:"Home décor", rev:9, acos:52, stage:0,
+   signal:"Very high ACoS on a thin margin category. Strong pain, small budget.",
+   next:"Check whether budget clears our floor before spending a call on it."},
+  {co:"Kettle & Co", pc:"Deepak Iyer", cat:"Small appliances", rev:24, acos:44, stage:1,
+   signal:"Confirmed 3 SKUs where ad spend exceeds contribution margin.",
+   next:"First touch — lead with the margin-negative SKU finding."},
+  {co:"Lumen Skincare", pc:"Priya Raghavan", cat:"Beauty", rev:41, acos:38, scaling:true, stage:1,
+   signal:"Scaling fast, ad efficiency slipping as they add SKUs. Classic our-problem.",
+   next:"First touch — reference their Q2 SKU expansion."},
+  {co:"Trailhead Outdoors", pc:"Sameer Bose", cat:"Outdoor gear", rev:27, acos:47, stage:2,
+   signal:"Opened both emails, no reply. Seasonal peak is 6 weeks out — timing pressure is real.",
+   next:"Third touch by phone. Anchor on the peak-season deadline, not the product."},
+  {co:"Paperfold Studio", pc:"Nandini Rao", cat:"Stationery", rev:12, acos:49, stage:2,
+   signal:"Replied asking to be contacted next quarter. Not a no.",
+   next:"Log the callback date and stop touching until then."},
+  {co:"Vertex Pet Supply", pc:"Arjun Menon", cat:"Pet supplies", rev:36, acos:43, stage:3,
+   signal:"Asked directly what our ACoS reduction looks like on pet consumables.",
+   next:"Send the category benchmark, then push for a calendar slot."},
+  {co:"Copper & Clay", pc:"Meera Shetty", cat:"Serveware", rev:21, acos:39, stage:3,
+   signal:"Interested but flagged that their agency already 'does this'.",
+   next:"Prep the agency-vs-automation objection before the next call."},
+  {co:"Halden Audio", pc:"Vikram Desai", cat:"Electronics", rev:58, acos:36, stage:4,
+   signal:"Demo confirmed with founder and their ops lead. Highest revenue in pipeline.",
+   next:"Build the pre-demo account teardown. Two stakeholders — cover both."},
+  {co:"Terra Baby", pc:"Sneha Kulkarni", cat:"Baby products", rev:19, acos:45, stage:4,
+   signal:"Rescheduled once. Confirm attendance 24h out.",
+   next:"Send confirmation and a one-line agenda the day before."},
+  {co:"Sunbelt Grocers", pc:"Karthik Reddy", cat:"Grocery", rev:44, acos:33, stage:5,
+   signal:"Signed after a 3-week cycle. ACoS was the whole conversation.",
+   next:"Ask for a referral into their supplier network while the win is fresh."}
+];
+
+let filter = null;
+const list = document.getElementById('list');
+const rail = document.getElementById('rail');
+const fState = document.getElementById('fState');
+const clearF = document.getElementById('clearF');
+
+function counts(){
+  return STAGES.map((_,i)=>DATA.filter(d=>d.stage===i).length);
+}
+
+function drawRail(){
+  const c = counts();
+  rail.innerHTML = STAGES.map((s,i)=>`
+    <button class="stage" type="button" data-s="${i}" ${i===5?'data-last':''}
+            aria-pressed="${filter===i}">
+      <span class="dot mono">${i+1}</span>
+      <span class="lbl">${s}</span>
+      <span class="cnt mono">${c[i]}</span>
+    </button>`).join('');
+  rail.querySelectorAll('.stage').forEach(b=>{
+    b.onclick=()=>{ const s=+b.dataset.s; filter = (filter===s?null:s); render(); };
+  });
+}
+
+function trackHTML(stage){
+  let h='';
+  for(let i=0;i<6;i++){
+    const cls = i<stage?'done':(i===stage?(stage===5?'won':'here'):'');
+    h+=`<i class="${cls}"></i>`;
+    if(i<5) h+=`<s class="${i<stage?'done':''}"></s>`;
+  }
+  return `<span class="track" aria-hidden="true">${h}</span>`;
+}
+
+function opener(d){
+  if(d.stage>=5) return `Closed. Reference story: ACoS was the entire conversation — reusable in ${d.cat} outreach.`;
+  if(d.acos>=35) return `Hi ${d.pc.split(' ')[0]} — went through ${d.co}'s ${d.cat.toLowerCase()} listings. At roughly ${d.acos}% ACoS on ₹${d.rev}L a month, there's about ₹${Math.round(d.rev*(d.acos-25)/100*10)/10}L of monthly ad spend that isn't buying you profitable volume. That's the specific thing we fix. Worth 15 minutes?`;
+  return `Hi ${d.pc.split(' ')[0]} — ${d.co}'s ad efficiency already looks tight at ${d.acos}% ACoS, so I won't pitch you on waste. The angle worth discussing is holding that efficiency as you scale SKUs. Open to a short call?`;
+}
+
+function render(){
+  drawRail();
+  const open = DATA.filter(d=>d.stage<5).length;
+  const won = DATA.filter(d=>d.stage===5).length;
+  const rev = DATA.filter(d=>d.stage<5).reduce((a,d)=>a+d.rev,0);
+  document.getElementById('tOpen').textContent = open;
+  document.getElementById('tWon').textContent = won;
+  document.getElementById('tRev').textContent = '₹'+rev+'L';
+
+  fState.textContent = filter===null ? 'Showing all accounts' : `Showing ${STAGES[filter].toLowerCase()}`;
+  clearF.hidden = filter===null;
+
+  const rows = DATA.map((d,idx)=>({d,idx})).filter(o=>filter===null||o.d.stage===filter);
+  if(!rows.length){ list.innerHTML=`<div class="empty">No accounts at this stage yet.</div>`; return; }
+
+  list.innerHTML = rows.map(({d,idx})=>`
+    <article class="row" id="r${idx}">
+      <button class="rowhead" type="button" data-i="${idx}" aria-expanded="false">
+        <span class="who">
+          <span class="co">${d.co}</span>
+          <span class="pc">${d.pc} · ${d.cat}</span>
+        </span>
+        <span class="metric"><span class="v mono">₹${d.rev}L</span><span class="k">GMV/mo</span></span>
+        <span class="metric ${d.acos>=35?'hot':''}"><span class="v mono">${d.acos}%</span><span class="k">ACoS</span></span>
+        ${trackHTML(d.stage)}
+        <span class="code mono">STG-0${d.stage+1}</span>
+      </button>
+      <div class="detail">
+        <div class="grid2">
+          <div>
+            <div class="fld"><span class="k">Stage</span><span class="v">${STAGES[d.stage]}</span></div>
+            <div class="fld"><span class="k">What we know</span><span class="v">${d.signal}</span></div>
+            <div class="fld"><span class="k">Next action</span><span class="v">${d.next}</span></div>
+          </div>
+          <div>
+            <span class="k" style="font-size:9.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-35);display:block;margin-bottom:6px">Drafted opener</span>
+            <div class="opener">${opener(d)}</div>
+          </div>
+        </div>
+        <div class="acts">
+          <button type="button" data-adv="${idx}" ${d.stage===5?'disabled':''}>
+            ${d.stage===4?'Mark converted':'Advance to '+STAGES[d.stage+1]?.toLowerCase()}
+          </button>
+          <button type="button" class="ghost" data-back="${idx}" ${d.stage===0?'disabled':''}>Move back</button>
+        </div>
+      </div>
+    </article>`).join('');
+
+  list.querySelectorAll('.rowhead').forEach(b=>{
+    b.onclick=()=>{
+      const row=b.closest('.row'), on=row.classList.toggle('open');
+      b.setAttribute('aria-expanded', on);
+    };
+  });
+  list.querySelectorAll('[data-adv]').forEach(b=>{
+    b.onclick=e=>{e.stopPropagation(); const i=+b.dataset.adv; if(DATA[i].stage<5){DATA[i].stage++; render();}};
+  });
+  list.querySelectorAll('[data-back]').forEach(b=>{
+    b.onclick=e=>{e.stopPropagation(); const i=+b.dataset.back; if(DATA[i].stage>0){DATA[i].stage--; render();}};
+  });
+}
+
+clearF.onclick=()=>{filter=null;render();};
+render();
+</script>
+</body>
+</html>
